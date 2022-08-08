@@ -22,10 +22,8 @@
 SendMode Input  ; Recommended for new scripts due to its superior speed and reliability.
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 #Persistent
-#Include menu.ahk
-#Include widget.ahk
 
-Global Popup_time := 5000
+Global Popup_time := 3000
 Global Taskbar_h := 30
 Global PIC_w := 300
 Global PIC_h := 300
@@ -37,35 +35,61 @@ Global Timer4 := ini
 Global Timer5 := ini
 Global Timer6 := ini
 
-PathToMainINI := A_ScriptDir . "\config.ini"
+Global PathToMainINI := A_ScriptDir . "\config.ini"
 
-IniRead, Timer1, %PathToMainINI%, Config, Timer1, 180
-IniRead, Timer2, %PathToMainINI%, Config, Timer2, 900
-IniRead, Timer3, %PathToMainINI%, Config, Timer3, 1800
-IniRead, Timer4, %PathToMainINI%, Config, Timer4, 3600
-IniRead, Timer5, %PathToMainINI%, Config, Timer5, 7200
-IniRead, Timer6, %PathToMainINI%, Config, Timer6, 14400
+AppTitle := "Power Reminder - Yvraldis Edition"
+win_w := 533
+win_h := 180
+Global ICO := A_ScriptDir . "\Icon.ico"
+
+Global DDLArray1 := ["Random","Yvraldis"]
+Global DDLArray2 := ["Shock","Demon"]
+
+Menu, Tray, NoStandard
+Menu, Tray, Tip, %AppTitle%
+Menu, Tray, Add, Menu, Menu
+Menu, Tray, Add, Reload, Reload
+Menu, Tray, Add,
+Menu, Tray, Add, Exit, Exit
+Menu, Tray, Default, Menu
+Menu, Tray, Icon, %ICO%
+
 
 fnClock := Func("Clock")
-SetTimer, %fnClock%, 1000
+If (ReadIni("onoff", "Energy Reminder"))
+	SetTimer, %fnClock%, 1000
 
+fnEnRi := Func("EnRi")
+If (ReadIni("EnergyReminderPopUps", "Settings")) {
+	t := ReadIni("time", "Settings") * 1000
+	SetTimer, %fnEnRi%, %t%
+}
+
+#Include menu.ahk
+#Include widget.ahk
 Return
 
 Clock() {
+    Memes()
+    ClosePopUpGUIs()
+}
+
+Memes() {
     Static c_index
 	c_index++
-    CloseGUIs()
+    If (ReadIni("MemePopUps", "Settings")) {
+		Loop, 6 {
+			k := "Timer" . (7 - A_Index)
+			If (Mod(c_index, ReadIni("time", k))=0) && ReadIni("onoff", k) {
+				Notifier(ReadIni("theme", k), ReadIni("status", k), ReadIni("align", k))
+				Break
+			}
+		}
+	}
+}
 
-	If (Mod(c_index, Timer6)=0)
-		Notifier("Yvraldis", "demon", "r")
-	Else If (Mod(c_index, Timer5)=0)
-		Notifier("Yvraldis", "demon", "l")
-	Else If (Mod(c_index, Timer4)=0)
-		Notifier("Yvraldis", "demon", "r")
-	Else If (Mod(c_index, Timer3)=0)
-		Notifier("Yvraldis", "shock", "l")
-	Else If (Mod(c_index, Timer2)=0)
-		Notifier("Yvraldis", "shock", "r")
-	Else If (Mod(c_index, Timer1)=0)
-		Notifier("Yvraldis", "shock", "l")
+EnRi() {
+    If (ReadIni("EnergyReminderPopUps", "Settings")) {
+    	Notifier("Yvraldis", "demon", "r")
+	}
 }

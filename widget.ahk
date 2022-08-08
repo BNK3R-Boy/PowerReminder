@@ -64,9 +64,11 @@ Notifier(_Theme, _State, _align="r") {
 	WinArray.Push([A_TickCount, WinCount])
 }
 
-CloseGUIs() {
+ClosePopUpGUIs(k="") {
 	Loop, % WinArray.length() {
 		tNow := A_TickCount
+		If (k="kill")
+			tNow += 1000000
 		Saved := WinArray[A_Index][1]
 		aSaved := Saved + Popup_time
 		If aSaved && (aSaved <= tNow) {
