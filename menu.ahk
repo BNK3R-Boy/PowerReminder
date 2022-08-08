@@ -19,12 +19,12 @@
 ;
 Menu:
 ThemeDropDownList := DDLbuilder(DDLArray1)
-StausDropDownList := DDLbuilder(DDLArray2)
+MemeDropDownList := DDLbuilder(DDLArray2)
 
 Gui, menu: +LastFound +HwndMenuHwnd
 Gui, menu: Font, s8 w600, Tahoma
 Gui, menu: Add, Button, Hidden w0 h0 Default, Save
-Gui, menu: Add, Tab, x0 y0 w%win_w% h%win_h% , Settings||Meme Timer
+Gui, menu: Add, Tab, x0 y0 w%win_w% h%win_h% , Settings|Meme Timer|Info||
 
 ;--------------------------------------------------------------------- Timer Tab
 Gui, menu: Tab, Meme Timer
@@ -99,14 +99,14 @@ Gui, menu: Add, DropDownList, r5 vDDL1_6 gWriteSelection x%column4% y%row7% w80 
 
 t := column5 + 5
 Gui, menu: Font, s8 w600
-Gui, menu: Add, Text, x%t% y%row1% w80 h20 , Status
+Gui, menu: Add, Text, x%t% y%row1% w80 h20 , Meme
 Gui, menu: Font, s7 w100
-Gui, menu: Add, DropDownList, r5 vDDL1_7 gWriteSelection x%column5% y%row2% w80 h20 , %StausDropDownList%
-Gui, menu: Add, DropDownList, r5 vDDL1_8 gWriteSelection x%column5% y%row3% w80 h20 , %StausDropDownList%
-Gui, menu: Add, DropDownList, r5 vDDL1_9 gWriteSelection x%column5% y%row4% w80 h20 , %StausDropDownList%
-Gui, menu: Add, DropDownList, r5 vDDL1_10 gWriteSelection x%column5% y%row5% w80 h20 , %StausDropDownList%
-Gui, menu: Add, DropDownList, r5 vDDL1_11 gWriteSelection x%column5% y%row6% w80 h20 , %StausDropDownList%
-Gui, menu: Add, DropDownList, r5 vDDL1_12 gWriteSelection x%column5% y%row7% w80 h20 , %StausDropDownList%
+Gui, menu: Add, DropDownList, r5 vDDL1_7 gWriteSelection x%column5% y%row2% w80 h20 , %MemeDropDownList%
+Gui, menu: Add, DropDownList, r5 vDDL1_8 gWriteSelection x%column5% y%row3% w80 h20 , %MemeDropDownList%
+Gui, menu: Add, DropDownList, r5 vDDL1_9 gWriteSelection x%column5% y%row4% w80 h20 , %MemeDropDownList%
+Gui, menu: Add, DropDownList, r5 vDDL1_10 gWriteSelection x%column5% y%row5% w80 h20 , %MemeDropDownList%
+Gui, menu: Add, DropDownList, r5 vDDL1_11 gWriteSelection x%column5% y%row6% w80 h20 , %MemeDropDownList%
+Gui, menu: Add, DropDownList, r5 vDDL1_12 gWriteSelection x%column5% y%row7% w80 h20 , %MemeDropDownList%
 
 gbx := column6 - 1
 gby := row2 - 1
@@ -208,6 +208,17 @@ Gui, menu: Add, Text, x%t% y%row1% w14 h20 , s.
 Gui, menu: Font, s7 w100
 Gui, menu: Add, Edit, r1 limit5 vEdit2_1 x%column5% y%row3% w40, 12345
 
+
+;------------------------------------------------------------------ Settings Tab
+Gui, menu: Tab, Info
+t := column1
+w := win_w - 15
+h := win_h - 40
+f := A_ScriptDir . "\Info.pr"
+FileRead, i, %f%
+Gui, menu: Font, s8 w0, Courier New
+Gui, menu: Add, Text, gOpenGithub x%t% y%row1% w%w% h%h% , %i%
+Gui, menu: Font, s7 w100
 
 Loop, 24
 	TrimRadiobox("Radio1_" . A_Index)
@@ -377,6 +388,10 @@ WriteSelection:
 		t := Edit2_1 * 1000
 		SetTimer, %fnEnRi%, %t%
 	}
+Return
+
+OpenGithub:
+	Run https://github.com/BNK3R-Boy/PowerReminder
 Return
 
 menuGuiClose:

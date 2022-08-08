@@ -34,7 +34,7 @@ Global Timer3 := ini
 Global Timer4 := ini
 Global Timer5 := ini
 Global Timer6 := ini
-
+Global URL := "https://github.com/BNK3R-Boy/PowerReminder"
 Global PathToMainINI := A_ScriptDir . "\config.ini"
 
 AppTitle := "Power Reminder - Yvraldis Edition"
@@ -72,6 +72,7 @@ Return
 Clock() {
     Memes()
     ClosePopUpGUIs()
+	;idlemodul
 }
 
 Memes() {
