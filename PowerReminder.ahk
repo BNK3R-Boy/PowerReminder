@@ -1,23 +1,4 @@
-﻿; Power Reminder - Yvraldis Edition - writte by
-;
-;
-;      ██████╗ ███╗   ██╗██╗  ██╗██████╗ ██████╗ ██████╗  ██████╗ ██╗   ██╗
-;      ██╔══██╗████╗  ██║██║ ██╔╝╚════██╗██╔══██╗██╔══██╗██╔═══██╗╚██╗ ██╔╝
-;      ██████╔╝██╔██╗ ██║█████╔╝  █████╔╝██████╔╝██████╔╝██║   ██║ ╚████╔╝
-;      ██╔══██╗██║╚██╗██║██╔═██╗  ╚═══██╗██╔══██╗██╔══██╗██║   ██║  ╚██╔╝
-;      ██████╔╝██║ ╚████║██║  ██╗██████╔╝██║  ██║██████╔╝╚██████╔╝   ██║
-;      ╚═════╝ ╚═╝  ╚═══╝╚═╝  ╚═╝╚═════╝ ╚═╝  ╚═╝╚═════╝  ╚═════╝    ╚═╝
-;
-;
-;                                                                    on 06/08/2022 13:23
-;
-;                    https://github.com/BNK3R-Boy/PowerReminder
-;
-;
-;
-;
-;
-#NoEnv  ; Recommended for performance and compatibility with future AutoHotkey releases.
+﻿#NoEnv  ; Recommended for performance and compatibility with future AutoHotkey releases.
 ; #Warn  ; Enable warnings to assist with detecting common errors.
 SendMode Input  ; Recommended for new scripts due to its superior speed and reliability.
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
@@ -41,7 +22,7 @@ Global PathToMainINI := A_ScriptDir . "\config.ini"
 Global InfoText
 InfoText =
 (
-writte by
+             Power Reminder - Yvraldis Edition - writte by
 
    ██████╗ ███╗   ██╗██╗  ██╗██████╗ ██████╗ ██████╗  ██████╗ ██╗   ██╗
    ██╔══██╗████╗  ██║██║ ██╔╝╚════██╗██╔══██╗██╔══██╗██╔═══██╗╚██╗ ██╔╝
@@ -271,11 +252,8 @@ Load_CFG_Radios() {
 	GuiControl, menu:, %k%, 1
 }
 
-ReadIni(k, s="Config", d="") {
-	If FileExist(PathToMainINI)
-		IniRead, v, %PathToMainINI%, %s%, %k%, %d%
-	Else
-		IniWrite, %d%, %PathToMainINI%, %s%, %k%
+ReadIni(k, s="Config") {
+	IniRead, v, %PathToMainINI%, %s%, %k%, %d%
 	Return %v%
 }
 
