@@ -18,13 +18,13 @@
 ;
 ;
 Menu:
-ThemeDropDownList := DDLbuilder(DDLArray1)
-MemeDropDownList := DDLbuilder(DDLArray2)
+Global ThemeDropDownList := DDLbuilder(ReadThemes())
+Global MemeDropDownList := DDLbuilder(ReadMemes())
 
 Gui, menu: +LastFound +HwndMenuHwnd
 Gui, menu: Font, s8 w600, Tahoma
 Gui, menu: Add, Button, Hidden w0 h0 Default, Save
-Gui, menu: Add, Tab, x0 y0 w%win_w% h%win_h% , Settings|Meme Timer|Info||
+Gui, menu: Add, Tab, x0 y0 w%win_w% h%win_h% , Settings|Meme Timer||Info|
 
 ;--------------------------------------------------------------------- Timer Tab
 Gui, menu: Tab, Meme Timer
@@ -232,7 +232,6 @@ Load_CFG_Edit()
 Gui, menu: Show, x622 y349 w%win_w% h%win_h%, %AppTitle%
 Return
 
-
 DDLbuilder(arr) {
 	DropDownList := ""
 	Loop, % arr.length()
@@ -241,21 +240,20 @@ DDLbuilder(arr) {
 }
 
 GetSlotIdFromArray(arr, k) {
-	Loop, % arr.length() 
+	loops := arr.length()
+	Loop, %loops%
 		If (arr[A_Index] = k)
 			Return A_Index
+	Return 1
 }
 
 Load_CFG_DDL() {
 	Loop, 6 { ; ------------------ Theme
-		i := GetSlotIdFromArray(DDLArray1, ReadIni("theme", "Timer" . A_Index))
-		k := "DDL1_" . A_Index
-        GuiControl, menu: Choose, %k%, %i%
+        SelectDDLitem("DDL1_" . A_Index, ReadThemes(), ReadIni("theme", "Timer" . A_Index))
 	}
-	Loop, 6 { ; ------------------ Status
-		i := GetSlotIdFromArray(DDLArray2, ReadIni("status", "Timer" . A_Index))
-		k := "DDL1_" . (A_Index + 6)
-        GuiControl, menu: Choose, %k%, %i%
+	Loop, 6 { ; ------------------ Meme
+		SelectDDLitemlist("DDL1_" . (A_Index + 6), ReadMemes(ReadIni("theme", "Timer" . A_Index)))
+		SelectDDLitem("DDL1_" . (A_Index + 6), ReadMemes(), ReadIni("meme", "Timer" . A_Index))
 	}
 }
 
@@ -300,6 +298,27 @@ ReadIni(k, s="Config", d="") {
 	Return %v%
 }
 
+ReadThemes() {
+	arr := []
+	tf := A_ScriptDir . "\Themes\*.*"
+	Loop Files, %tf%, D
+    	arr.Push(A_LoopFileName)
+	Return arr
+}
+
+ReadMemes(theme="Yvraldis") {
+	arr := []
+	mf := A_ScriptDir . "\Themes\" . theme . "\configs\*.*"
+	Loop Files, %mf%, F
+	{
+        SplitPath, A_LoopFileName , ,,,f
+		arr.Push(f)
+	}
+	If !arr.length()
+		arr := ReadMemes()
+	Return arr
+}
+
 SaveIni(k, v, s="Config") {
     If FileExist(PathToMainINI)
 	{
@@ -307,6 +326,17 @@ SaveIni(k, v, s="Config") {
 		If (check_v != v) 
 			IniWrite, %v%, %PathToMainINI%, %s%, %k%
 	} 
+}
+
+SelectDDLitemlist(key, ddlarray) {
+	GuiControl, menu:, %key%, |
+	GuiControl, menu:, %key%, % DDLbuilder(ddlarray)
+}
+
+SelectDDLitem(key, ddlarray, itemName) {
+	GuiControl, menu: Choose, %key%, % GetSlotIdFromArray(ddlarray, itemName)
+    GuiControlGet, itemName, menu:, %key%
+	Return itemName
 }
 
 TrimRadiobox(Radiobox) {
@@ -363,11 +393,15 @@ WriteSelection:
 		t := "Edit1_" . A_Index
 		t := %t%
 
+		SelectDDLitemlist("DDL1_" . (A_Index + 6), ReadMemes(th))
+		s:= SelectDDLitem("DDL1_" . (A_Index + 6), ReadMemes(th), s)
+
 		SaveIni("onoff", r, "Timer" . A_Index)
 		SaveIni("theme", th, "Timer" . A_Index)
-		SaveIni("status", s, "Timer" . A_Index)
+		SaveIni("meme", s, "Timer" . A_Index)
 		SaveIni("align", a, "Timer" . A_Index)
 		SaveIni("time", t, "Timer" . A_Index)
+
 		L_Index += 2
 	}
 

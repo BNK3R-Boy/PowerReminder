@@ -65,8 +65,10 @@ If (ReadIni("EnergyReminderPopUps", "Settings")) {
 	SetTimer, %fnEnRi%, %t%
 }
 
+
 #Include menu.ahk
 #Include widget.ahk
+f9::EnRi()
 Return
 
 Clock() {
@@ -91,6 +93,59 @@ Memes() {
 
 EnRi() {
     If (ReadIni("EnergyReminderPopUps", "Settings")) {
-    	Notifier("Yvraldis", "demon", "r")
+		theme := selectRNDtheme()
+		meme := selectRNDmeme(theme)
+    	Notifier(theme, meme, (rnd(1,2)=1) ? "l" : "r")
+	}
+}
+
+rnd(from,to,set:=100) {
+	FormatTime, t ,, HHmmss
+	Random, , %t%
+	Loop, set {
+		Random, rand, 0, 999999
+		Random, , %rand%
+	}
+	Random, rand, %from%, %to%
+	Return rand
+}
+
+CountThemes() {
+    tf := A_ScriptDir . "\Themes\*.*"
+	Loop Files, %tf%, D
+		count++
+	Return count
+}
+
+CountMemes(th) {
+    tf := A_ScriptDir . "\Themes\" . th . "\*.*"
+	Loop Files, %tf%, D
+		count++
+	Return count
+}
+
+selectRNDtheme() {
+	rndt := rnd(1, CountThemes())
+    tf := A_ScriptDir . "\Themes\*.*"
+	Loop Files, %tf%, D
+	{
+		count++
+        If (rndt = Count) {
+	        SplitPath, A_LoopFileName , ,,,f
+			Return f
+		}
+	}
+}
+
+selectRNDmeme(th) {
+	rndt := rnd(1, CountMemes(th))
+    tf := A_ScriptDir . "\Themes\" . th . "\configs\*.*"
+	Loop Files, %tf%, F
+	{
+		count++
+        If (rndt = Count) {
+	        SplitPath, A_LoopFileName , ,,,f
+			Return f
+		}
 	}
 }
