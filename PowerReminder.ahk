@@ -4,16 +4,18 @@ SendMode Input  ; Recommended for new scripts due to its superior speed and reli
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 #Persistent
 SetBatchLines, -1
-
-Global AppTitle := "Power Reminder - Yvraldis Edition"
+;FileEncoding, UTF-8
+Global AppTitle := "P👽wer Reminder - Yvraldis Edition"
 Global AppVersion := "0.1"
 Global AppToolTip
-Global ICO := A_ScriptDir . "\Icon.ico"
+Global TF := A_Temp . "\PowerReminder\"
+Global ICO := TF . "PowerReminder.ico"
 Global InfoText
 InfoText =
 (
-   Power Reminder - Yvraldis Edition - writte by                     v.%AppVersion%
 
+   Power Reminder - Yvraldis Edition                         writte by
+                                          
    ██████╗ ███╗   ██╗██╗  ██╗██████╗ ██████╗ ██████╗  ██████╗ ██╗   ██╗
    ██╔══██╗████╗  ██║██║ ██╔╝╚════██╗██╔══██╗██╔══██╗██╔═══██╗╚██╗ ██╔╝
    ██████╔╝██╔██╗ ██║█████╔╝  █████╔╝██████╔╝██████╔╝██║   ██║ ╚████╔╝
@@ -21,12 +23,12 @@ InfoText =
    ██████╔╝██║ ╚████║██║  ██╗██████╔╝██║  ██║██████╔╝╚██████╔╝   ██║
    ╚═════╝ ╚═╝  ╚═══╝╚═╝  ╚═╝╚═════╝ ╚═╝  ╚═╝╚═════╝  ╚═════╝    ╚═╝
 
-   https://github.com/BNK3R-Boy/PowerReminder            on August 2022
+   👽n August 2022                                                 v%AppVersion%
 )
-Global PathToMainINI := A_ScriptDir . "\config.ini"
+Global PathToMainINI := TF . "\config.ini"
 Global PIC_h := 300
 Global PIC_w := 300
-Global Popup_time := ReadIni("PopUpTime", "Settings", 3)
+Global Popup_time
 Global Taskbar_h := 30
 Global URL := "https://github.com/BNK3R-Boy/PowerReminder"
 Global WinArray := []
@@ -38,6 +40,14 @@ Global Slider2_1_TT, Slider2_2_TT
 Global TwitchTitle
 
 
+If !FileExist(TF) {
+	FileCreateDir, %TF%
+	If !FileExist(ICO)
+		FileInstall, PowerReminder.ico, %ICO%, 1
+}
+CreateIniFile()
+Popup_time := ReadIni("PopUpTime", "Settings", 3)
+
 Menu, Tray, NoStandard
 Menu, Tray, Icon, %ICO%
 Menu, Tray, Add, Menu, Menu
@@ -48,7 +58,7 @@ Menu, Tray, Add, %TwitchTitle%, OpenTwitchStream
 Menu, Tray, Add, Twitch, OpenTwitchStream
 Menu, Tray, Add, Instagram, OpenInsta
 Menu, Tray, Add, Twitter, OpenTwitter
-Menu, Tray, Add, Etsy, OpenEtsy
+Menu, Tray, Add, Etsy Store, OpenEtsy
 Menu, Tray, Add,
 Menu, Tray, Add, Unstuck Pop-Ups, CloseAllPopUpGUIs
 Menu, Tray, Add,
@@ -71,26 +81,55 @@ SetTimer, %fnGetTwitchTitle%, 300000
 OnMessage(0x200, "WM_MOUSEMOVE")
 Return
 
-WM_MOUSEMOVE() {
-	static CurrControl, PrevControl, _TT
-	CurrControl := A_GuiControl
-	If (CurrControl <> PrevControl) {
-			SetTimer, DisplayToolTip, -100
-			PrevControl := CurrControl
+CreateIniFile() {
+	If !FileExist(PathToMainINI) {
+		SaveIni("onoff", 1)
+	    SaveIni("time", 4200)
+	    SaveIni("MemePopUps", 1)
+	    SaveIni("EnergyReminderPopUps", 0)
+	    SaveIni("PopUpTime", 2500)
+	    SaveIni("Idle", 0)
+
+	    SaveIni("onoff", 1, "Timer1")
+	    SaveIni("theme", "Yvraldis", "Timer1")
+	    SaveIni("meme", "demon", "Timer1")
+	    SaveIni("align", "l", "Timer1")
+	    SaveIni("time", 600, "Timer1")
+
+	    SaveIni("onoff", 1, "Timer2")
+	    SaveIni("theme", "Yvraldis", "Timer2")
+	    SaveIni("meme", "shock", "Timer2")
+	    SaveIni("align", "r", "Timer2")
+	    SaveIni("time", 900, "Timer2")
+
+	    SaveIni("onoff", 1, "Timer3")
+	    SaveIni("theme", "Yvraldis", "Timer3")
+	    SaveIni("meme", "demon", "Timer3")
+	    SaveIni("align", "l", "Timer3")
+	    SaveIni("time", 1800, "Timer3")
+
+	    SaveIni("onoff", 1, "Timer4")
+	    SaveIni("theme", "Yvraldis", "Timer4")
+	    SaveIni("meme", "shock", "Timer4")
+	    SaveIni("align", "r", "Timer4")
+	    SaveIni("time", 3600, "Timer4")
+
+	    SaveIni("onoff", 1, "Timer5")
+	    SaveIni("theme", "Yvraldis", "Timer5")
+	    SaveIni("meme", "demon", "Timer5")
+	    SaveIni("align", "l", "Timer5")
+	    SaveIni("time", 7200, "Timer5")
+
+	    SaveIni("onoff", 1, "Timer6")
+	    SaveIni("theme", "Yvraldis", "Timer6")
+	    SaveIni("meme", "shock", "Timer6")
+	    SaveIni("align", "r", "Timer6")
+	    SaveIni("time", 14400, "Timer6")
 	}
-	return
+}
 
-	DisplayToolTip:
-		Try
-				ToolTip, % %CurrControl%_TT
-		Catch
-				ToolTip,
-		SetTimer, RemoveToolTip, -2000
-	return
-
-	RemoveToolTip:
-		ToolTip,
-	return
+Add2Ini(k, v, s="Settings") {
+	IniWrite, %v%, %PathToMainINI%, %s%, %k%
 }
 
 Clock() {
@@ -184,15 +223,15 @@ GetSlotIdFromArray(arr, k) {
 GetTwitchTitle(s="yvraldis") {
 	checksite := "tmp.txt"
 	turl := "https://www.twitch.tv/" . s
-	PageRequest := ComObjCreate("WinHttp.WinHttpRequest.5.1")
-	PageRequest.Open("GET", turl, true)
-	PageRequest.Send()
-	PageRequest.WaitForResponse()
+	Page := ComObjCreate("WinHttp.WinHttpRequest.5.1")
+	Page.Open("GET", turl, true)
+	Page.Send()
+	Page.WaitForResponse()
 
     beforeString1 = <meta name=`"description`" content=`"
 	afterString1 = `"/><
 
-	foundAtPos1 := RegExMatch(PageRequest.ResponseText, "s)\Q" . beforeString1 . "\E(.*?)\Q" . afterString1 . "\E", res)
+	foundAtPos1 := RegExMatch(Page.ResponseText, "s)\Q" . beforeString1 . "\E(.*?)\Q" . afterString1 . "\E", res)
 	TwitchTitle := res1
 
 	AppTooltip := AppTitle . "`n" . TwitchTitle
@@ -381,13 +420,8 @@ rnd(from,to,set:=100) {
 	Return rand
 }
 
-SaveIni(k, v, s="Config") {
-    If FileExist(PathToMainINI)
-	{
-	    IniRead, check_v, %PathToMainINI%, %s%, %k%, 0
-		If (check_v != v)
-			IniWrite, %v%, %PathToMainINI%, %s%, %k%
-	}
+SaveIni(k, v, s="Settings") {
+	IniWrite, %v%, %PathToMainINI%, %s%, %k%
 }
 
 SelectDDLitem(key, ddlarray, itemName) {
@@ -430,6 +464,28 @@ TrimRadiobox(Radiobox) {
 	GuiControl, menu: Move, %Radiobox%, w%rH%
 }
 
+WM_MOUSEMOVE() {
+	static CurrControl, PrevControl, _TT
+	CurrControl := A_GuiControl
+	If (CurrControl <> PrevControl) {
+			SetTimer, DisplayToolTip, -100
+			PrevControl := CurrControl
+	}
+	return
+
+	DisplayToolTip:
+		Try
+				ToolTip, % %CurrControl%_TT
+		Catch
+				ToolTip,
+		SetTimer, RemoveToolTip, -2000
+	return
+
+	RemoveToolTip:
+		ToolTip,
+	return
+}
+
 menuButtonSave:
 	Gui, menu: Submit, NoHide
 	Loop, 6 {
@@ -465,9 +521,10 @@ Menu:
 
 	Gui, menu: destroy
 	Gui, menu: +LastFound +HwndMenuHwnd
-	Gui, menu: Font, s8 w600, Tahoma
+	Gui, menu: Font, s8 w100, Tahoma
 	Gui, menu: Add, Button, Hidden w0 h0 Default, Save
 	Gui, menu: Add, Tab, x0 y0 w%win_w% h%win_h% , Settings||Meme Timer|Info|
+	Gui, menu: Font, s8 w600, Tahoma
 
 	;--------------------------------------------------------------------- Timer Tab
 	Gui, menu: Tab, Meme Timer
@@ -666,10 +723,10 @@ Menu:
 	Gui, menu: Tab, Info
 	t := column1
 	w := win_w - 15
-	h := win_h - 40
-
+	h := win_h - 20
+	row0 := row1 - 15
 	Gui, menu: Font, s8 w300, Courier New
-	Gui, menu: Add, Text, gOpenGithub x%t% y%row1% w%w% h%h% , %InfoText%
+	Gui, menu: Add, Text, gOpenGithub BackgroundTrans x%t% y%row0% w%w% h%h% , %InfoText%
 
 	Loop, 24
 		TrimRadiobox("Radio1_" . A_Index)
