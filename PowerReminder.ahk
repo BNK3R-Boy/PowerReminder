@@ -5,7 +5,7 @@ SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 #Persistent
 SetBatchLines, -1
 ;FileEncoding, UTF-8
-Global AppTitle := "P👽wer Reminder - Yvraldis Edition"
+Global AppTitle := "Power Reminder - Yvraldis Edition"
 Global AppVersion := "0.1"
 Global AppToolTip
 Global TF := A_Temp . "\PowerReminder\"
@@ -23,7 +23,7 @@ InfoText =
    ██████╔╝██║ ╚████║██║  ██╗██████╔╝██║  ██║██████╔╝╚██████╔╝   ██║
    ╚═════╝ ╚═╝  ╚═══╝╚═╝  ╚═╝╚═════╝ ╚═╝  ╚═╝╚═════╝  ╚═════╝    ╚═╝
 
-   👽n August 2022                                                 v%AppVersion%
+   on August 2👽22                                                 v%AppVersion%
 )
 Global PathToMainINI := TF . "\config.ini"
 Global PIC_h := 300
