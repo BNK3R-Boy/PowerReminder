@@ -4,7 +4,7 @@ SendMode Input  ; Recommended for new scripts due to its superior speed and reli
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 #Persistent
 SetBatchLines, -1
-;FileEncoding, UTF-8
+FileEncoding, UTF-8
 Global AppTitle := "Power Reminder - Yvraldis Edition"
 Global AppVersion := "0.1"
 Global AppToolTip := AppTitle
@@ -37,9 +37,12 @@ Global win_w := 533
 Global WinHistoryArray := []
 Global Slider1_1_TT, Slider1_2_TT, Slider1_3_TT, Slider1_4_TT, Slider1_5_TT, Slider1_6_TT
 Global Slider2_1_TT, Slider2_2_TT
-Global TwitchTitle := "Disconnected"
-fnGetTwitchTitle := Func("GetTwitchTitle")
-
+Global TwitchTitle := "Twitch: Disconnected"
+Global TwitchLink
+Global TwitterTitle := "Twitter: Disconnected"
+Global TwitterLink
+Global InstagramTitle := "Instagram: Disconnected"
+Global InstagramLink
 
 If !FileExist(TF) {
 	FileCreateDir, %TF%
@@ -51,15 +54,17 @@ Popup_time := ReadIni("PopUpTime", "Settings", 3)
 
 Menu, Tray, NoStandard
 Menu, Tray, Icon, %ICO%
+
 Menu, Tray, Tip, %AppTooltip%
 Menu, Tray, Add, %TwitchTitle%, OpenTwitchStream
-Menu, Tray, Add, Twitch, OpenTwitchStream
-Menu, Tray, Add, Instagram, OpenInsta
-Menu, Tray, Add, Twitter, OpenTwitter
+Menu, Tray, Add, %InstagramTitle%, OpenInstagramLink
+Menu, Tray, Add, %TwitterTitle%, OpenTwitterLink
+Menu, webportals, Add, Twitch, OpenTwitchStream
+Menu, webportals, Add, Instagram, OpenInstagram
+Menu, webportals, Add, Twitter, OpenTwitter
+Menu, Tray, Add, Web portals, :webportals
 Menu, Tray, Add, Etsy Store, OpenEtsy
 Menu, Tray, Add,
-fnGetTwitchTitle := Func("GetTwitchTitle")
-SetTimer, %fnGetTwitchTitle%, 300000
 Menu, Tray, Add, Menu, Menu
 Menu, Tray, Add, Unstuck Pop-Ups, CloseAllPopUpGUIs
 Menu, Tray, Add,
@@ -67,8 +72,9 @@ Menu, Tray, Add, Reload, Reload
 Menu, Tray, Add, Exit, Exit
 Menu, Tray, Default, Menu
 
-RefreshMenu(true)
-
+GetWebData("Twitch", "https://www.twitch.tv/yvraldis")
+GetWebData("Twitter", "https://rss.app/feeds/RlRJtcDm23osS3Dp.xml")
+GetWebData("Instagram", "https://rss.app/feeds/TFWPloYEDai0dx6r.xml")
 fnClock := Func("Clock")
 Global fnEnRi := Func("EnRi")
 
@@ -79,15 +85,31 @@ If (ReadIni("EnergyReminderPopUps", "Settings")) {
 	t := ReadIni("time", "Settings") * 1000
 	SetTimer, %fnEnRi%, %t%
 }
-
+RefreshMenu(1)
 fnRefreshMenu := Func("RefreshMenu")
 SetTimer, %fnRefreshMenu%, 5000
 
+OnError("errRe")
 OnMessage(0x200, "WM_MOUSEMOVE")
 Return
 
 Add2Ini(k, v, s="Settings") {
 	IniWrite, %v%, %PathToMainINI%, %s%, %k%
+}
+
+ClearOldTimesFromWinArray(age) {
+	Loop, % WinArray.length() {
+		tNow := A_TickCount
+		Saved := WinArray[A_Index][1]
+		WinCount := WinArray[A_Index][2]
+		aSaved := Saved + Popup_time
+		dif := tNow - Saved
+		If (dif >= age) {
+			Gui, txtwd%WinCount%: destroy
+			Gui, picwd%WinCount%: destroy
+			WinArray.RemoveAt(A_Index)
+		}
+	}
 }
 
 Clock() {
@@ -114,21 +136,6 @@ ClosePopUpGUIs(k="") {
 		WinCount := WinArray[A_Index][2]
 		dif := Round(tNow - Saved, 0)
 		If Saved && WinCount && (dif >= Popup_time) {
-			Gui, txtwd%WinCount%: destroy
-			Gui, picwd%WinCount%: destroy
-			WinArray.RemoveAt(A_Index)
-		}
-	}
-}
-
-ClearOldTimesFromWinArray(age) {
-	Loop, % WinArray.length() {
-		tNow := A_TickCount
-		Saved := WinArray[A_Index][1]
-		WinCount := WinArray[A_Index][2]
-		aSaved := Saved + Popup_time
-		dif := tNow - Saved
-		If (dif >= age) {
 			Gui, txtwd%WinCount%: destroy
 			Gui, picwd%WinCount%: destroy
 			WinArray.RemoveAt(A_Index)
@@ -217,6 +224,31 @@ EnRi() {
 	}
 }
 
+errRe(exception) {
+    FileAppend % "Error on line " exception.Line ": " exception.Message "`n"
+        , errorlog.txt
+    SoundBeep, 1200, 5000
+    Reload
+}
+
+GetRSSData(turl) {
+	If IsOnline() {
+		Page := ComObjCreate("WinHttp.WinHttpRequest.5.1")
+		Page.Open("GET", turl, true)
+		Page.Send()
+		Page.WaitForResponse()
+		XML := ComObjCreate("MSXML2.DOMDocument.6.0")
+		XML.Async := false
+		XML.LoadXML(Page.ResponseText)
+		XMLNode := XML.SelectSingleNode("//channel/item/title")
+		wt := XMLNode.Text
+		XMLNode := XML.SelectSingleNode("//channel/item/link")
+		lk := XMLNode.Text
+		Return [wt, lk]
+	} Else
+		Return ["Disconnected",""]
+}
+
 GetSlotIdFromArray(arr, k) {
 	loops := arr.length()
 	Loop, %loops%
@@ -225,23 +257,45 @@ GetSlotIdFromArray(arr, k) {
 	Return 1
 }
 
-GetTwitchTitle(s="yvraldis") {
-	turl := "https://www.twitch.tv/" . s
-	Page := ComObjCreate("WinHttp.WinHttpRequest.5.1")
-	Page.Open("GET", turl, true)
-	Page.Send()
-	Page.WaitForResponse()
+GetWebData(platform, url) {
+	ot := %platform%Title
+	l := %platform%Link
 
-    beforeString1 = <meta name=`"description`" content=`"
-	afterString1 = `"/><
+	If (platform!="Twitch") {
+	    RSSdata:= GetRSSData(url)
+	    sarray := StrSplit(RSSdata[1]," ")
+	    If (RSSdata[1]!="Disconnected") {
+			str := ""
+			Loop, 10
+				str .= sarray[A_Index] . " "
+			%platform%Title := platform . ": " . trim(str) . "..."
+		} Else
+			%platform%Title := platform . ": " . RSSdata[1]
+	    %platform%Link := RSSdata[2]
+		nt := %platform%Title
+        Menu, Tray, Rename, %ot% , %nt%
+	} Else {
+		If IsOnline() {
+			Page := ComObjCreate("WinHttp.WinHttpRequest.5.1")
+			Page.Open("GET", url, true)
+			Page.Send()
+			Page.WaitForResponse()
+			Page := Page.ResponseText
 
-	foundAtPos1 := RegExMatch(Page.ResponseText, "s)\Q" . beforeString1 . "\E(.*?)\Q" . afterString1 . "\E", res)
-	a := StrSplit(res1 , "|")
-	wt := a[1]
-	Menu, Tray, Rename, %TwitchTitle%, %wt%
-    TwitchTitle := wt
-	AppTooltip := AppTitle . "`n" . wt
-	Menu, Tray, Tip, %AppTooltip%
+		    beforeString1 = <meta name=`"description`" content=`"
+			afterString1 = `"/><
+			SearchStr := "s)\Q" . beforeString1 . "\E(.*?)\Q" . afterString1 . "\E"
+
+			foundAtPos1 := RegExMatch(Page, SearchStr, res)
+			a := StrSplit(res1 , "|")
+			%platform%Title := (a[1]) ? "Twitch: " . a[1] : "Twitch: Stream title temporarily not available"
+		  	AppTooltip := AppTitle . "`n" . a[1]
+			Menu, Tray, Tip, %AppTooltip%
+		} Else
+			%platform%Title := "Twitch: Disconnected"
+		nt := %platform%Title
+        Menu, Tray, Rename, %ot% , %nt%
+	}
 }
 
 IdleModule() {
@@ -368,8 +422,18 @@ Notifier(_Theme, _State, _align="r") {
 		Gui, txtwd%WinCount%: Add, Text, w320 BackgroundTrans Center, %TXT%
 		Gui, txtwd%WinCount%: Show, x%TXT_widget_x% y%TXT_widget_y% NA, Power Reminder
 		WinSet, TransColor, 101020, ahk_id %TXTwdHwnd%
-		SoundBeep, 1200, 250
+		; SoundBeep, 1200, 250
 	}
+}
+
+OpenEtsy() {
+	turl := "https://www.etsy.com/de/shop/Yvraldis"
+	Run, %turl%
+}
+
+OpenInstagram() {
+	turl := "https://www.instagram.com/yvraldis"
+	Run, %turl%
 }
 
 OpenTwitchStream() {
@@ -377,18 +441,8 @@ OpenTwitchStream() {
 	Run, %turl%
 }
 
-OpenInsta() {
-	turl := "https://www.instagram.com/yvraldis"
-	Run, %turl%
-}
-
 OpenTwitter() {
 	turl := "https://twitter.com/Yvraldis"
-	Run, %turl%
-}
-
-OpenEtsy() {
-	turl := "https://www.etsy.com/de/shop/Yvraldis"
 	Run, %turl%
 }
 
@@ -420,23 +474,26 @@ ReadThemes() {
 	Return arr
 }
 
-RefreshMenu(b="") {
+RefreshMenu(b=0) {
 	Static a
+	GetWebData("Twitch", "https://www.twitch.tv/yvraldis")
+	GetWebData("Twitter", "https://rss.app/feeds/RlRJtcDm23osS3Dp.xml")
+	GetWebData("Instagram", "https://rss.app/feeds/TFWPloYEDai0dx6r.xml")
 	If isOnline() && !a {
-		GetTwitchTitle()
-		Menu, Tray, Enable, %TwitchTitle%
-		Menu, Tray, Enable, Twitch
-		Menu, Tray, Enable, Instagram
-		Menu, Tray, Enable, Twitter
+		Menu, Tray, Tip, %AppTooltip%
+		Menu, Tray, Enable, Web portals
 		Menu, Tray, Enable, Etsy Store
+		Menu, Tray, Enable, %TwitchTitle%
+		Menu, Tray, Enable, %TwitterTitle%
+		Menu, Tray, Enable, %InstagramTitle%
 		a := true
 	}
-	If !isOnline() && (a || b){
-		Menu, Tray, Disable, %TwitchTitle%
-		Menu, Tray, Disable, Twitch
-		Menu, Tray, Disable, Instagram
-		Menu, Tray, Disable, Twitter
+	If !isOnline() && (a || b) {
+		Menu, Tray, Disable, Web portals
 		Menu, Tray, Disable, Etsy Store
+		Menu, Tray, Disable, %TwitchTitle%
+		Menu, Tray, Disable, %TwitterTitle%
+		Menu, Tray, Disable, %InstagramTitle%
 		a := false
 	}
 }
@@ -778,6 +835,14 @@ Return
 
 OpenGithub:
 	Run https://github.com/BNK3R-Boy/PowerReminder
+Return
+
+OpenTwitterLink:
+	Run %TwitterLink%
+Return
+
+OpenInstagramLink:
+	Run %InstagramLink%
 Return
 
 Reload:
