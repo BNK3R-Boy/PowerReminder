@@ -7,7 +7,7 @@ SetBatchLines, -1
 ;FileEncoding, UTF-8
 Global AppTitle := "Power Reminder - Yvraldis Edition"
 Global AppVersion := "0.1"
-Global AppToolTip
+Global AppToolTip := AppTitle
 Global TF := A_Temp . "\PowerReminder\"
 Global ICO := TF . "PowerReminder.ico"
 Global InfoText
@@ -37,7 +37,8 @@ Global win_w := 533
 Global WinHistoryArray := []
 Global Slider1_1_TT, Slider1_2_TT, Slider1_3_TT, Slider1_4_TT, Slider1_5_TT, Slider1_6_TT
 Global Slider2_1_TT, Slider2_2_TT
-Global TwitchTitle
+Global TwitchTitle := "Disconnected"
+fnGetTwitchTitle := Func("GetTwitchTitle")
 
 
 If !FileExist(TF) {
@@ -50,22 +51,23 @@ Popup_time := ReadIni("PopUpTime", "Settings", 3)
 
 Menu, Tray, NoStandard
 Menu, Tray, Icon, %ICO%
-Menu, Tray, Add, Menu, Menu
-Menu, Tray, Add,
-fnGetTwitchTitle := Func("GetTwitchTitle")
-GetTwitchTitle()
+Menu, Tray, Tip, %AppTooltip%
 Menu, Tray, Add, %TwitchTitle%, OpenTwitchStream
 Menu, Tray, Add, Twitch, OpenTwitchStream
 Menu, Tray, Add, Instagram, OpenInsta
 Menu, Tray, Add, Twitter, OpenTwitter
 Menu, Tray, Add, Etsy Store, OpenEtsy
 Menu, Tray, Add,
+fnGetTwitchTitle := Func("GetTwitchTitle")
+SetTimer, %fnGetTwitchTitle%, 300000
+Menu, Tray, Add, Menu, Menu
 Menu, Tray, Add, Unstuck Pop-Ups, CloseAllPopUpGUIs
 Menu, Tray, Add,
 Menu, Tray, Add, Reload, Reload
 Menu, Tray, Add, Exit, Exit
 Menu, Tray, Default, Menu
 
+RefreshMenu(true)
 
 fnClock := Func("Clock")
 Global fnEnRi := Func("EnRi")
@@ -77,56 +79,12 @@ If (ReadIni("EnergyReminderPopUps", "Settings")) {
 	t := ReadIni("time", "Settings") * 1000
 	SetTimer, %fnEnRi%, %t%
 }
-SetTimer, %fnGetTwitchTitle%, 300000
+
+fnRefreshMenu := Func("RefreshMenu")
+SetTimer, %fnRefreshMenu%, 5000
+
 OnMessage(0x200, "WM_MOUSEMOVE")
 Return
-
-CreateIniFile() {
-	If !FileExist(PathToMainINI) {
-		SaveIni("onoff", 1)
-	    SaveIni("time", 4200)
-	    SaveIni("MemePopUps", 1)
-	    SaveIni("EnergyReminderPopUps", 0)
-	    SaveIni("PopUpTime", 2500)
-	    SaveIni("Idle", 0)
-
-	    SaveIni("onoff", 1, "Timer1")
-	    SaveIni("theme", "Yvraldis", "Timer1")
-	    SaveIni("meme", "demon", "Timer1")
-	    SaveIni("align", "l", "Timer1")
-	    SaveIni("time", 600, "Timer1")
-
-	    SaveIni("onoff", 1, "Timer2")
-	    SaveIni("theme", "Yvraldis", "Timer2")
-	    SaveIni("meme", "shock", "Timer2")
-	    SaveIni("align", "r", "Timer2")
-	    SaveIni("time", 900, "Timer2")
-
-	    SaveIni("onoff", 1, "Timer3")
-	    SaveIni("theme", "Yvraldis", "Timer3")
-	    SaveIni("meme", "demon", "Timer3")
-	    SaveIni("align", "l", "Timer3")
-	    SaveIni("time", 1800, "Timer3")
-
-	    SaveIni("onoff", 1, "Timer4")
-	    SaveIni("theme", "Yvraldis", "Timer4")
-	    SaveIni("meme", "shock", "Timer4")
-	    SaveIni("align", "r", "Timer4")
-	    SaveIni("time", 3600, "Timer4")
-
-	    SaveIni("onoff", 1, "Timer5")
-	    SaveIni("theme", "Yvraldis", "Timer5")
-	    SaveIni("meme", "demon", "Timer5")
-	    SaveIni("align", "l", "Timer5")
-	    SaveIni("time", 7200, "Timer5")
-
-	    SaveIni("onoff", 1, "Timer6")
-	    SaveIni("theme", "Yvraldis", "Timer6")
-	    SaveIni("meme", "shock", "Timer6")
-	    SaveIni("align", "r", "Timer6")
-	    SaveIni("time", 14400, "Timer6")
-	}
-}
 
 Add2Ini(k, v, s="Settings") {
 	IniWrite, %v%, %PathToMainINI%, %s%, %k%
@@ -192,6 +150,53 @@ CountThemes() {
 	Return count
 }
 
+CreateIniFile() {
+	If !FileExist(PathToMainINI) {
+		SaveIni("onoff", 1)
+	    SaveIni("time", 4200)
+	    SaveIni("MemePopUps", 1)
+	    SaveIni("EnergyReminderPopUps", 0)
+	    SaveIni("PopUpTime", 2500)
+	    SaveIni("Idle", 0)
+
+	    SaveIni("onoff", 1, "Timer1")
+	    SaveIni("theme", "Yvraldis", "Timer1")
+	    SaveIni("meme", "demon", "Timer1")
+	    SaveIni("align", "l", "Timer1")
+	    SaveIni("time", 600, "Timer1")
+
+	    SaveIni("onoff", 1, "Timer2")
+	    SaveIni("theme", "Yvraldis", "Timer2")
+	    SaveIni("meme", "shock", "Timer2")
+	    SaveIni("align", "r", "Timer2")
+	    SaveIni("time", 900, "Timer2")
+
+	    SaveIni("onoff", 1, "Timer3")
+	    SaveIni("theme", "Yvraldis", "Timer3")
+	    SaveIni("meme", "demon", "Timer3")
+	    SaveIni("align", "l", "Timer3")
+	    SaveIni("time", 1800, "Timer3")
+
+	    SaveIni("onoff", 1, "Timer4")
+	    SaveIni("theme", "Yvraldis", "Timer4")
+	    SaveIni("meme", "shock", "Timer4")
+	    SaveIni("align", "r", "Timer4")
+	    SaveIni("time", 3600, "Timer4")
+
+	    SaveIni("onoff", 1, "Timer5")
+	    SaveIni("theme", "Yvraldis", "Timer5")
+	    SaveIni("meme", "demon", "Timer5")
+	    SaveIni("align", "l", "Timer5")
+	    SaveIni("time", 7200, "Timer5")
+
+	    SaveIni("onoff", 1, "Timer6")
+	    SaveIni("theme", "Yvraldis", "Timer6")
+	    SaveIni("meme", "shock", "Timer6")
+	    SaveIni("align", "r", "Timer6")
+	    SaveIni("time", 14400, "Timer6")
+	}
+}
+
 DDLbuilder(arr) {
 	DropDownList := ""
 	Loop, % arr.length()
@@ -221,7 +226,6 @@ GetSlotIdFromArray(arr, k) {
 }
 
 GetTwitchTitle(s="yvraldis") {
-	checksite := "tmp.txt"
 	turl := "https://www.twitch.tv/" . s
 	Page := ComObjCreate("WinHttp.WinHttpRequest.5.1")
 	Page.Open("GET", turl, true)
@@ -232,15 +236,22 @@ GetTwitchTitle(s="yvraldis") {
 	afterString1 = `"/><
 
 	foundAtPos1 := RegExMatch(Page.ResponseText, "s)\Q" . beforeString1 . "\E(.*?)\Q" . afterString1 . "\E", res)
-	TwitchTitle := res1
-
-	AppTooltip := AppTitle . "`n" . TwitchTitle
+	a := StrSplit(res1 , "|")
+	wt := a[1]
+	Menu, Tray, Rename, %TwitchTitle%, %wt%
+    TwitchTitle := wt
+	AppTooltip := AppTitle . "`n" . wt
 	Menu, Tray, Tip, %AppTooltip%
 }
 
 IdleModule() {
     If ReadIni("Idle", "Settings") && (A_TimeIdle >= 1) && (A_TimeIdle <= 50)
 		SetTimer, %fnEnRi%, %t%
+}
+
+IsOnline() {
+	RunWait, %ComSpec% /c ping -n 1 1.1.1.1 ,, Hide UseErrorLevel
+	Return !ErrorLevel
 }
 
 Load_CFG_DDL() {
@@ -407,6 +418,27 @@ ReadThemes() {
 	Loop Files, %tf%, D
     	arr.Push(A_LoopFileName)
 	Return arr
+}
+
+RefreshMenu(b="") {
+	Static a
+	If isOnline() && !a {
+		GetTwitchTitle()
+		Menu, Tray, Enable, %TwitchTitle%
+		Menu, Tray, Enable, Twitch
+		Menu, Tray, Enable, Instagram
+		Menu, Tray, Enable, Twitter
+		Menu, Tray, Enable, Etsy Store
+		a := true
+	}
+	If !isOnline() && (a || b){
+		Menu, Tray, Disable, %TwitchTitle%
+		Menu, Tray, Disable, Twitch
+		Menu, Tray, Disable, Instagram
+		Menu, Tray, Disable, Twitter
+		Menu, Tray, Disable, Etsy Store
+		a := false
+	}
 }
 
 rnd(from,to,set:=100) {
