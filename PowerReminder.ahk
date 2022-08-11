@@ -3,11 +3,18 @@
 SendMode Input  ; Recommended for new scripts due to its superior speed and reliability.
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 #Persistent
+#InstallKeybdHook
+#MaxThreadsPerHotkey 1
+#MaxThreadsBuffer 1
+
+SetKeyDelay, 50, 5
 SetBatchLines, -1
 FileEncoding, UTF-8
 Global AppTitle := "Power Reminder - Yvraldis Edition"
 Global AppVersion := "0.1"
 Global AppToolTip := AppTitle
+Global GBBa := ["Start", "Select", "A", "B", "Up", "Down", "Left", "Right", "Spare"]
+Global GBBai := []
 Global TF := A_Temp . "\PowerReminder\"
 Global ICO := TF . "PowerReminder.ico"
 Global InfoText
@@ -43,6 +50,7 @@ Global TwitterTitle := "Twitter: Disconnected"
 Global TwitterLink
 Global InstagramTitle := "Instagram: Disconnected"
 Global InstagramLink
+Global NOTIFIERLOG := "Notifierlog.txt"
 
 If !FileExist(TF) {
 	FileCreateDir, %TF%
@@ -72,30 +80,36 @@ Menu, Tray, Add, Reload, Reload
 Menu, Tray, Add, Exit, Exit
 Menu, Tray, Default, Menu
 
-GetWebData("Twitch", "https://www.twitch.tv/yvraldis")
-GetWebData("Twitter", "https://rss.app/feeds/RlRJtcDm23osS3Dp.xml")
-GetWebData("Instagram", "https://rss.app/feeds/TFWPloYEDai0dx6r.xml")
+Hotkey, Joy1 , GameboyButton
+Hotkey, Joy2 , GameboyButton
+Hotkey, Joy7 , GameboyButton
+Hotkey, Joy8 , GameboyButton
+
 fnClock := Func("Clock")
 Global fnEnRi := Func("EnRi")
 
 If (ReadIni("onoff", "Energy Reminder"))
-	SetTimer, %fnClock%, 10
+	SetTimer, %fnClock%, 50
 
 If (ReadIni("EnergyReminderPopUps", "Settings")) {
 	t := ReadIni("time", "Settings") * 1000
 	SetTimer, %fnEnRi%, %t%
 }
+
 RefreshMenu(1)
+Load_GBB()
+GameBoy()
+
 fnRefreshMenu := Func("RefreshMenu")
-SetTimer, %fnRefreshMenu%, 5000
+SetTimer, %fnRefreshMenu%, 30000
 
 OnError("errRe")
 OnMessage(0x200, "WM_MOUSEMOVE")
-Return
 
-Add2Ini(k, v, s="Settings") {
-	IniWrite, %v%, %PathToMainINI%, %s%, %k%
-}
+GetWebData("Twitch", "https://www.twitch.tv/yvraldis")
+GetWebData("Twitter", "https://rss.app/feeds/RlRJtcDm23osS3Dp.xml")
+GetWebData("Instagram", "https://rss.app/feeds/TFWPloYEDai0dx6r.xml")
+Return
 
 ClearOldTimesFromWinArray(age) {
 	Loop, % WinArray.length() {
@@ -108,6 +122,7 @@ ClearOldTimesFromWinArray(age) {
 			Gui, txtwd%WinCount%: destroy
 			Gui, picwd%WinCount%: destroy
 			WinArray.RemoveAt(A_Index)
+            LogEvent("Notifier: " . WinCount . " - Closed by history", NOTIFIERLOG)
 		}
 	}
 }
@@ -117,6 +132,7 @@ Clock() {
     Memes()
     ClosePopUpGUIs()
     ClearOldTimesFromWinArray(Popup_time * 10)
+    GameBoy()
 }
 
 CloseAllPopUpGUIs() {
@@ -124,6 +140,7 @@ CloseAllPopUpGUIs() {
 		WinCount := WinHistoryArray[A_Index]
 		Gui, txtwd%WinCount%: destroy
 		Gui, picwd%WinCount%: destroy
+        LogEvent("Notifier: " . WinCount . " - Closed by close all", NOTIFIERLOG)
 	}
 }
 
@@ -139,6 +156,7 @@ ClosePopUpGUIs(k="") {
 			Gui, txtwd%WinCount%: destroy
 			Gui, picwd%WinCount%: destroy
 			WinArray.RemoveAt(A_Index)
+            LogEvent("Notifier: " . WinCount . " - Closed by countdown", NOTIFIERLOG)
 		}
 	}
 }
@@ -231,6 +249,44 @@ errRe(exception) {
     Reload
 }
 
+Fill_Edit(box, k, s) {
+	t := ReadIni(k, s)
+    StringReplace, i, box, Edit4_
+    GBBai[i] := t
+    GuiControl, menu:, %box%, %t%
+}
+
+GameBoy() {
+    Critical
+	Static a
+    fnWatchDPad := Func("WatchDPad")
+	GameBoyMode := ReadIni("GamBoyMode", "Settings", 0)
+	If (GameBoyMode && !a) {
+		SetTimer, %fnWatchDPad%, 150
+		Hotkey, Joy1 , On
+		Hotkey, Joy2 , On
+		Hotkey, Joy7 , On
+		Hotkey, Joy8 , On
+		a := 1
+	}
+	If (!GameBoyMode && a) {
+		SetTimer, %fnWatchDPad%, OFF
+		Hotkey, Joy1 , OFF
+		Hotkey, Joy2 , OFF
+		Hotkey, Joy7 , OFF
+		Hotkey, Joy8 , OFF
+		a := 0
+	}
+}
+
+GBM(k) {
+    Critical
+	SendEvent, %k%{Enter}
+	Sleep, 1000
+	e := GBBai[9]
+	SendEvent, %e%{Enter}
+}
+
 GetRSSData(turl) {
 	If IsOnline() {
 		Page := ComObjCreate("WinHttp.WinHttpRequest.5.1")
@@ -320,6 +376,11 @@ Load_CFG_DDL() {
 }
 
 Load_CFG_Edit() {
+	s := "GameBoy"
+	Loop, % GBBa.length() {
+		Fill_Edit("Edit4_" . A_index, GBBa[A_Index], s)
+	}
+
 	DTarray =: ["600","900","1800","3600","7200","14400"]
 	Loop, 6 { ; ------------------ Theme
 		k := "Edit1_" . A_Index
@@ -358,6 +419,22 @@ Load_CFG_Radios() {
 	GuiControl, menu:, %k%, 1
 	k := "Radio2_" . ((ReadIni("MemePopUps", "Settings", 0)) ? 7 : 8)
 	GuiControl, menu:, %k%, 1
+	k := "Radio2_" . ((ReadIni("GamBoyMode", "Settings", 0)) ? 9 : 10)
+	GuiControl, menu:, %k%, 1
+}
+
+Load_GBB() {
+    Loop, 9
+    	GBBai[A_Index] := ReadIni(GBBa[A_Index], "GameBoy")
+}
+
+LogEvent(txt, file) {
+	LogModul := 1
+	If LogModul {
+        FormatTime, timestamp, , [yyyyMMddHHmmss]
+		txt := timestamp . " " . txt . "`n"
+		FileAppend, %txt%, %file%
+	}
 }
 
 Memes() {
@@ -372,23 +449,25 @@ Memes() {
 	}
 }
 
-Notifier(_Theme, _State, _align="r") {
+Notifier(theme, meme, align="r") {
 	Static WinCount
 	Try {
 		WinCount++
+		PathToImage := A_ScriptDir . "\Themes\" . theme . "\imgsets\" . meme . ".png"
+		PathToTXT := A_ScriptDir . "\Themes\" . theme . "\txtsets\" . meme . ".txt"
+		PathToINI := A_ScriptDir . "\Themes\" . theme . "\configs\" . meme . ".ini"
 
-		PathToImage := A_ScriptDir . "\Themes\" . _Theme . "\imgsets\" . _State . ".png"
-		PathToTXT := A_ScriptDir . "\Themes\" . _Theme . "\txtsets\" . _State . ".txt"
-		PathToINI := A_ScriptDir . "\Themes\" . _Theme . "\configs\" . _State . ".ini"
+		FileRead, TXT, %PathToTXT%
+
+		IniRead, TXT_size, %PathToINI%, Config, TXT_size, 14
+		IniRead, TXT_color, %PathToINI%, Config, TXT_color, 00ff00
+		IniRead, TXT_yPos, %PathToINI%, Config, TXT_yPos, 180
+
 		PIC_widget_y := A_ScreenHeight - PIC_h - Taskbar_h
-		PIC_widget_x := (_align = "r") ? A_ScreenWidth - PIC_w - 40 : 40
+		PIC_widget_x := (align = "r") ? A_ScreenWidth - PIC_w - 40 : 40
 		PIC_widget_w := PIC_w
 		PIC_widget_h := PIC_h
 
-		FileRead, TXT, %PathToTXT%
-		IniRead, TXT_size, %PathToINI%, "Config", TXT_size, 14
-		IniRead, TXT_color, %PathToINI%, "Config", TXT_color, 00ff00
-		IniRead, TXT_yPos, %PathToINI%, "Config", TXT_yPos, 180
 
 		TXT_color := "c" . TXT_color
 		TXT_size := "s" . TXT_size
@@ -411,19 +490,23 @@ Notifier(_Theme, _State, _align="r") {
 		}
 
 		Gui, picwd%WinCount%: Color, 123456
-		Gui, picwd%WinCount%: +LastFound +AlwaysOnTop -Caption +ToolWindow +E0x20 +HwndPICwdHwnd
+		Gui, picwd%WinCount%: +LastFound +AlwaysOnTop -Caption +ToolWindow +HwndPICwdHwnd
 		Gui, picwd%WinCount%: Add, Picture, x0 y0, %PathToImage%
-		Gui, picwd%WinCount%: Show, x%PIC_widget_x% y%PIC_widget_y% w%PIC_widget_w% h%PIC_widget_h% NA, Power Reminder
+		Gui, picwd%WinCount%: Show, x%PIC_widget_x% y%PIC_widget_y% w%PIC_widget_w% h%PIC_widget_h% NA, Power Reminder Widget | %WinCount%
 		WinSet, TransColor, 123456, ahk_id %PICwdHwnd%
 
 		Gui, txtwd%WinCount%: Color, 101020
-		Gui, txtwd%WinCount%: +LastFound +AlwaysOnTop -Caption +ToolWindow +E0x20 +HwndTXTwdHwnd
+		Gui, txtwd%WinCount%: +LastFound +AlwaysOnTop -Caption +ToolWindow +HwndTXTwdHwnd
 		Gui, txtwd%WinCount%: Font, %TXT_color% %TXT_size%
 		Gui, txtwd%WinCount%: Add, Text, w320 BackgroundTrans Center, %TXT%
-		Gui, txtwd%WinCount%: Show, x%TXT_widget_x% y%TXT_widget_y% NA, Power Reminder
+		Gui, txtwd%WinCount%: Show, x%TXT_widget_x% y%TXT_widget_y% NA, Power Reminder Widget | %WinCount%
 		WinSet, TransColor, 101020, ahk_id %TXTwdHwnd%
+		; msgbox, PathToINI %PathToINI%`ntheme %theme%`nmeme %meme%`nalign %align%`nTXT_size %TXT_size%`nTXT_color %TXT_color%`nTXT_yPos %TXT_yPos%
 		; SoundBeep, 1200, 250
+        LogEvent("Notifier: " . WinCount . " - PathToINI: " . PathToINI . " - Theme: " . theme . " - Meme: " . meme . " - Align: " . align . " - TXT_size: " . TXT_size . " - TXT_color: " . TXT_color . " - TXT_yPos: "  . TXT_yPos, NOTIFIERLOG)
 	}
+	; Catch
+		; LogEvent("Notifier: Error " . WinCount, NOTIFIERLOG)
 }
 
 OpenEtsy() {
@@ -553,15 +636,41 @@ TrimRadiobox(Radiobox) {
 	GuiControl, menu: Move, %Radiobox%, w%rH%
 }
 
+WatchDPad() {
+    Critical
+	POV := GetKeyState("JoyPOV")
+	If not POV = -1  ; No angle.
+	{
+		If (POV > 31500 or POV < 4500)  ; Up
+	    	GBM(GBBai[5])
+		Else If POV between 13500 and 22500  ; Down
+	    	GBM(GBBai[6])
+		Else If POV between 22500 and 31500  ; Left
+	    	GBM(GBBai[7])
+		Else If POV between 4500 and 13500  ; Right
+	    	GBM(GBBai[8])
+	}
+}
+
 WM_MOUSEMOVE() {
 	static CurrControl, PrevControl, _TT
+	MouseGetPos,x,y, WindowUnderMounse,, 2
+	WinGetTitle, wn, ahk_id %WindowUnderMounse%
+	wa := StrSplit(wn, "|")
+	wt := Trim(wa[1])
+    WinCount := Trim(wa[2])
+	If (wt == "Power Reminder Widget") {
+		Gui, txtwd%WinCount%: destroy
+		Gui, picwd%WinCount%: destroy
+        LogEvent("Notifier: " . WinCount . " Closed by mouseover", NOTIFIERLOG)
+	}
+
 	CurrControl := A_GuiControl
 	If (CurrControl <> PrevControl) {
 			SetTimer, DisplayToolTip, -100
 			PrevControl := CurrControl
 	}
 	return
-
 	DisplayToolTip:
 		Try
 				ToolTip, % %CurrControl%_TT
@@ -604,15 +713,27 @@ Exit:
 	ExitApp
 Return
 
+GameBoyButton:
+	hk := A_ThisHotkey
+	(hk = "Joy1") ? GBM(GBBai[3])
+	(hk = "Joy2") ? GBM(GBBai[4])
+	(hk = "Joy7") ? GBM(GBBai[2])
+	(hk = "Joy8") ? GBM(GBBai[1])
+return
+
 Menu:
 	Global ThemeDropDownList := DDLbuilder(ReadThemes())
 	Global MemeDropDownList := DDLbuilder(ReadMemes())
-
+    If (MenuHwnd) {
+		Gui, menu: destroy
+        MenuHwnd := ""
+		Return
+	}
 	Gui, menu: destroy
-	Gui, menu: +LastFound +HwndMenuHwnd
+	Gui, menu: +LastFound +HwndMenuHwnd +E0x20
 	Gui, menu: Font, s8 w100, Tahoma
 	Gui, menu: Add, Button, Hidden w0 h0 Default, Save
-	Gui, menu: Add, Tab, x0 y0 w%win_w% h%win_h% , Settings||Meme Timer|Info|
+	Gui, menu: Add, Tab, x0 y0 w%win_w% h%win_h% , Settings||Meme Timer|GameBoy Modus|Info|
 	Gui, menu: Font, s8 w600, Tahoma
 
 	;--------------------------------------------------------------------- Timer Tab
@@ -646,32 +767,32 @@ Menu:
 	gbx := column2 - 1
 	gby := row2 - 1
 	Gui, menu: Add, Text, x%column2% y%row1% w60 h20 , On/Off
-	Gui, menu: Add, GroupBox, x%gbx% y%gby% w25 h22,
+	Gui, menu: Add, GroupBox, x%gbx% y%gby% w25 h12,
 	Gui, menu: Add, Radio, vRadio1_1 gWriteSelection x%column2% y%row2% w30 h20 ,
 	Gui, menu: Add, Radio, vRadio1_2 gWriteSelection x%column3% y%row2% w30 h20 ,
 
 	gby := row3 - 1
-	Gui, menu: Add, GroupBox, x%gbx% y%gby% w25 h22,
+	Gui, menu: Add, GroupBox, x%gbx% y%gby% w25 h12,
 	Gui, menu: Add, Radio, vRadio1_3 gWriteSelection x%column2% y%row3% w30 h20 ,
 	Gui, menu: Add, Radio, vRadio1_4 gWriteSelection x%column3% y%row3% w30 h20 ,
 
 	gby := row4 - 1
-	Gui, menu: Add, GroupBox, x%gbx% y%gby% w25 h22,
+	Gui, menu: Add, GroupBox, x%gbx% y%gby% w25 h12,
 	Gui, menu: Add, Radio, vRadio1_5 gWriteSelection x%column2% y%row4% w30 h20 ,
 	Gui, menu: Add, Radio, vRadio1_6 gWriteSelection x%column3% y%row4% w30 h20 ,
 
 	gby := row5 - 1
-	Gui, menu: Add, GroupBox, x%gbx% y%gby% w25 h22,
+	Gui, menu: Add, GroupBox, x%gbx% y%gby% w25 h12,
 	Gui, menu: Add, Radio, vRadio1_7 gWriteSelection x%column2% y%row5% w30 h20 ,
 	Gui, menu: Add, Radio, vRadio1_8 gWriteSelection x%column3% y%row5% w30 h20 ,
 
 	gby := row6 - 1
-	Gui, menu: Add, GroupBox, x%gbx% y%gby% w25 h22,
+	Gui, menu: Add, GroupBox, x%gbx% y%gby% w25 h12,
 	Gui, menu: Add, Radio, vRadio1_9 gWriteSelection x%column2% y%row6% w30 h20 ,
 	Gui, menu: Add, Radio, vRadio1_10 gWriteSelection x%column3% y%row6% w30 h20 ,
 
 	gby := row7 - 1
-	Gui, menu: Add, GroupBox, x%gbx% y%gby% w25 h22,
+	Gui, menu: Add, GroupBox, x%gbx% y%gby% w25 h12,
 	Gui, menu: Add, Radio, vRadio1_11 gWriteSelection x%column2% y%row7% w30 h20 ,
 	Gui, menu: Add, Radio, vRadio1_12 gWriteSelection x%column3% y%row7% w30 h20 ,
 
@@ -702,32 +823,32 @@ Menu:
 	t := column6 + 5
 	Gui, menu: Font, s8 w600
 	Gui, menu: Add, Text, x%t% y%row1% w66 h20 , L / R
-	Gui, menu: Add, GroupBox, x%gbx% y%gby% w25 h22,
+	Gui, menu: Add, GroupBox, x%gbx% y%gby% w25 h12,
 	Gui, menu: Add, Radio, vRadio1_13 gWriteSelection x%column6% y%row2% w40 h20 ,
 	Gui, menu: Add, Radio, vRadio1_14 gWriteSelection x%column7% y%row2% w40 h20 ,
 
 	gby := row3 - 1
-	Gui, menu: Add, GroupBox, x%gbx% y%gby% w25 h22,
+	Gui, menu: Add, GroupBox, x%gbx% y%gby% w25 h12,
 	Gui, menu: Add, Radio, vRadio1_15 gWriteSelection x%column6% y%row3% w40 h20 ,
 	Gui, menu: Add, Radio, vRadio1_16 gWriteSelection x%column7% y%row3% w40 h20 ,
 
 	gby := row4 - 1
-	Gui, menu: Add, GroupBox, x%gbx% y%gby% w25 h22,
+	Gui, menu: Add, GroupBox, x%gbx% y%gby% w25 h12,
 	Gui, menu: Add, Radio, vRadio1_17 gWriteSelection x%column6% y%row4% w40 h20 ,
 	Gui, menu: Add, Radio, vRadio1_18 gWriteSelection x%column7% y%row4% w40 h20 ,
 
 	gby := row5 - 1
-	Gui, menu: Add, GroupBox, x%gbx% y%gby% w25 h22,
+	Gui, menu: Add, GroupBox, x%gbx% y%gby% w25 h12,
 	Gui, menu: Add, Radio, vRadio1_19 gWriteSelection x%column6% y%row5% w40 h20 ,
 	Gui, menu: Add, Radio, vRadio1_20 gWriteSelection x%column7% y%row5% w40 h20 ,
 
 	gby := row6 - 1
-	Gui, menu: Add, GroupBox, x%gbx% y%gby% w25 h22,
+	Gui, menu: Add, GroupBox, x%gbx% y%gby% w25 h12,
 	Gui, menu: Add, Radio, vRadio1_21 gWriteSelection x%column6% y%row6% w40 h20 ,
 	Gui, menu: Add, Radio, vRadio1_22 gWriteSelection x%column7% y%row6% w40 h20 ,
 
 	gby := row7 - 1
-	Gui, menu: Add, GroupBox, x%gbx% y%gby% w25 h22,
+	Gui, menu: Add, GroupBox, x%gbx% y%gby% w25 h12,
 	Gui, menu: Add, Radio, vRadio1_23 gWriteSelection x%column6% y%row7% w40 h20 ,
 	Gui, menu: Add, Radio, vRadio1_24 gWriteSelection x%column7% y%row7% w40 h20 ,
 
@@ -772,14 +893,14 @@ Menu:
 	gbx := column2 - 1
 	gby := row2 - 1
 	Gui, menu: Add, Text, x%column1% y%row2% w180 h20 , Energy Reminder
-	Gui, menu: Add, GroupBox, x%gbx% y%gby% w25 h22,
+	Gui, menu: Add, GroupBox, x%gbx% y%gby% w25 h12,
 	Gui, menu: Add, Radio, vRadio2_1 gWriteSelection x%column2% y%row2% w30 h20 ,
 	Gui, menu: Add, Radio, vRadio2_2 gWriteSelection x%column3% y%row2% w30 h20 ,
 
 	gby := row3 - 1
 	w := 150
 	Gui, menu: Add, Text, x%column1% y%row3% w180 h20 , Energy Reminder Pop-Ups
-	Gui, menu: Add, GroupBox, x%gbx% y%gby% w25 h22,
+	Gui, menu: Add, GroupBox, x%gbx% y%gby% w25 h12,
 	Gui, menu: Add, Radio, vRadio2_3 gWriteSelection x%column2% y%row3% w30 h20 ,
 	Gui, menu: Add, Radio, vRadio2_4 gWriteSelection x%column3% y%row3% w30 h20 ,
 	Gui, menu: Add, Slider, AltSubmit vSlider2_1 gWriteSelectionSlider2_1Settings range15-14400 x%column4% y%row3% w%w% h20 , 25
@@ -789,7 +910,7 @@ Menu:
 
 	gby := row4 - 1
 	Gui, menu: Add, Text, x%column1% y%row4% w180 h20 , Idle Modus
-	Gui, menu: Add, GroupBox, x%gbx% y%gby% w25 h22,
+	Gui, menu: Add, GroupBox, x%gbx% y%gby% w25 h12,
 	Gui, menu: Add, Radio, vRadio2_5 gWriteSelection x%column2% y%row4% w30 h20 ,
 	Gui, menu: Add, Radio, vRadio2_6 gWriteSelection x%column3% y%row4% w30 h20 ,
 
@@ -797,29 +918,92 @@ Menu:
 	t := column5 + 18
 	Gui, menu: Add, Text, x%t% y%row5% w20 h20 , ms.
 	Gui, menu: Add, Text, x%column1% y%row5% w180 h20 , Meme Pop-Ups
-	Gui, menu: Add, GroupBox, x%gbx% y%gby% w25 h22,
+	Gui, menu: Add, GroupBox, x%gbx% y%gby% w25 h12,
 	Gui, menu: Add, Radio, vRadio2_7 gWriteSelection x%column2% y%row5% w30 h20 ,
 	Gui, menu: Add, Radio, vRadio2_8 gWriteSelection x%column3% y%row5% w30 h20 ,
 
-	Gui, menu: Add, Text, vTTText5 x%column1% y%row6% w180 h20 , Pop-Up Time
+	Gui, menu: Add, Text, x%column1% y%row6% w180 h20 , Pop-Up Time
 	Gui, menu: Add, Slider, AltSubmit vSlider2_2 gWriteSelectionSlider2_2Settings range1-60000 x%column4% y%row6% w%w% h20 , 3000
 	Gui, menu: Font, s8 w100
 	Gui, menu: Add, Edit, r1 limit5 vEdit2_2 x%column5% y%row6% w40, %Popup_time%
 	Gui, menu: Font, s8 w600
 
+	gby := row7 - 1
+	Gui, menu: Add, Text, x%column1% y%row7% w180 h20 , GameBoy Modus (Xbox Pad)
+	Gui, menu: Add, GroupBox, x%gbx% y%gby% w25 h12,
+	Gui, menu: Add, Radio, vRadio2_9 gWriteSelection x%column2% y%row7% w30 h20 ,
+	Gui, menu: Add, Radio, vRadio2_10 gWriteSelection x%column3% y%row7% w30 h20 ,
+
+
+	;------------------------------------------------------------- GameBoy Modus Tab
+	Gui, menu: Tab, GameBoy Modus
+
+	column1 := 32
+	column2 := 92
+	column3 := 290
+	column4 := 330
+
+
+	gby := row3 - 1
+	w := 150
+	Gui, menu: Font, s8 w600
+	Gui, menu: Add, Text, x%column1% y%row2% w80 h20 , Start
+	Gui, menu: Font, s8 w100
+	Gui, menu: Add, Edit, r1 limit15 vEdit4_1 x%column2% y%row2% w140, yvraldStart
+	Gui, menu: Font, s8 w600
+	Gui, menu: Add, Text, x%column3% y%row2% w80 h20 , Up
+	Gui, menu: Font, s8 w100
+	Gui, menu: Add, Edit, r1 limit15 vEdit4_5 x%column4% y%row2% w140, yvraldUp
+
+	Gui, menu: Font, s8 w600
+	Gui, menu: Add, Text, x%column1% y%row3% w80 h20 , Select
+	Gui, menu: Font, s8 w100
+	Gui, menu: Add, Edit, r1 limit15 vEdit4_2 x%column2% y%row3% w140, yvraldSelect
+	Gui, menu: Font, s8 w600
+	Gui, menu: Add, Text, x%column3% y%row3% w80 h20 , Down
+	Gui, menu: Font, s8 w100
+	Gui, menu: Add, Edit, r1 limit15 vEdit4_6 x%column4% y%row3% w140, yvraldDown
+
+	Gui, menu: Font, s8 w600
+	Gui, menu: Add, Text, x%column1% y%row4% w80 h20 , A Button
+	Gui, menu: Font, s8 w100
+	Gui, menu: Add, Edit, r1 limit15 vEdit4_3 x%column2% y%row4% w140, yvraldKekfe
+	Gui, menu: Font, s8 w600
+	Gui, menu: Add, Text, x%column3% y%row4% w80 h20 , Left
+	Gui, menu: Font, s8 w100
+	Gui, menu: Add, Edit, r1 limit15 vEdit4_7 x%column4% y%row4% w140, yvraldLeft
+
+	Gui, menu: Font, s8 w600
+	Gui, menu: Add, Text, x%column1% y%row5% w80 h20 , B Button
+	Gui, menu: Font, s8 w100
+	Gui, menu: Add, Edit, r1 limit15 vEdit4_4 x%column2% y%row5% w140, yvraldTroll
+	Gui, menu: Font, s8 w600
+	Gui, menu: Add, Text, x%column3% y%row5% w80 h20 , Right
+	Gui, menu: Font, s8 w100
+	Gui, menu: Add, Edit, r1 limit15 vEdit4_8 x%column4% y%row5% w140, yvraldRight
+	Gui, menu: Font, s8 w600
+
+	column3 := 170
+	column4 := 220
+	row6 += 5
+	Gui, menu: Add, Text, x%column3% y%row6% w80 h20 , Spare
+	Gui, menu: Font, s8 w100
+	Gui, menu: Add, Edit, r1 limit15 vEdit4_9 x%column4% y%row6% w140, yvraldLoad
+	Gui, menu: Font, s8 w600
+
 
 	;---------------------------------------------------------------------- Info Tab
 	Gui, menu: Tab, Info
-	t := column1
+	column1 := 12
 	w := win_w - 15
 	h := win_h - 20
 	row0 := row1 - 15
 	Gui, menu: Font, s8 w300, Courier New
-	Gui, menu: Add, Text, gOpenGithub BackgroundTrans x%t% y%row0% w%w% h%h% , %InfoText%
+	Gui, menu: Add, Text, gOpenGithub BackgroundTrans x%column1% y%row0% w%w% h%h% , %InfoText%
 
 	Loop, 24
 		TrimRadiobox("Radio1_" . A_Index)
-	Loop, 8
+	Loop, 10
 		TrimRadiobox("Radio2_" . A_Index)
 
 	Load_CFG_Radios()
@@ -878,10 +1062,19 @@ WriteSelection:
 
 	SaveIni("onoff", Radio2_1, "Settings")
 	SaveIni("time", Edit2_1, "Settings")
+	SaveIni("PopUpTime", Edit2_2, "Settings")
+	SaveIni("EnergyReminderPopUps", Radio2_3, "Settings")
 	SaveIni("Idle", Radio2_5, "Settings")
 	SaveIni("MemePopUps", Radio2_7, "Settings")
-	SaveIni("EnergyReminderPopUps", Radio2_3, "Settings")
-	SaveIni("PopUpTime", Edit2_2, "Settings")
+	SaveIni("GamBoyMode", Radio2_9, "Settings")
+
+	s := "GameBoy"
+	Loop, 9 {
+        b = Edit4_%A_index%
+		b := %b%
+		SaveIni(GBBa[A_Index], b, s)
+		GBBai[A_Index] := b
+	}
 
 	Popup_time := Edit2_2
 

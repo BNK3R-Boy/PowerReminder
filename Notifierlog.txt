@@ -1,0 +1,2 @@
+﻿[20220812004243] Notifier: 1 - PathToINI: F:\GitHub\PowerReminder\Themes\Yvraldis\configs\demon.ini - Theme: Yvraldis - Meme: demon - Align: l - TXT_size: s14 - TXT_color: cFF0000 - TXT_yPos: 180
+[20220812004246] Notifier: 1 - Closed by countdown
