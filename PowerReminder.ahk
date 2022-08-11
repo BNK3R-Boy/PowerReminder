@@ -1015,6 +1015,7 @@ Return
 
 menuGuiClose:
 	Gui, menu: Destroy
+    MenuHwnd := ""
 Return
 
 OpenGithub:
