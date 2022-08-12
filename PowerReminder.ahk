@@ -32,6 +32,7 @@ InfoText =
 
    on August 2👽22                                                 v%AppVersion%
 )
+Global LogModul := 0
 Global PathToMainINI := TF . "\config.ini"
 Global PIC_h := 300
 Global PIC_w := 300
@@ -44,6 +45,9 @@ Global win_w := 533
 Global WinHistoryArray := []
 Global Slider1_1_TT, Slider1_2_TT, Slider1_3_TT, Slider1_4_TT, Slider1_5_TT, Slider1_6_TT
 Global Slider2_1_TT, Slider2_2_TT
+Global SplashPIC_widget_h := 200
+Global SplashPIC_widget_w := 600
+Global PathToSplashImage := TF . "splash.png"
 Global TwitchTitle := "Twitch: Disconnected"
 Global TwitchLink
 Global TwitterTitle := "Twitter: Disconnected"
@@ -51,15 +55,16 @@ Global TwitterLink
 Global InstagramTitle := "Instagram: Disconnected"
 Global InstagramLink
 Global NOTIFIERLOG := "Notifierlog.txt"
-
-If !FileExist(TF) {
+If !FileExist(TF)
 	FileCreateDir, %TF%
-	If !FileExist(ICO)
-		FileInstall, PowerReminder.ico, %ICO%, 1
-}
+If !FileExist(ICO)
+	FileInstall, PowerReminder.ico, %ICO%, 1
+If !FileExist(PathToSplashImage)
+	FileInstall, splash.png, %PathToSplashImage%, 1
 CreateIniFile()
 Popup_time := ReadIni("PopUpTime", "Settings", 3)
 
+SplashScreen()
 Menu, Tray, NoStandard
 Menu, Tray, Icon, %ICO%
 
@@ -98,7 +103,6 @@ If (ReadIni("EnergyReminderPopUps", "Settings")) {
 
 RefreshMenu(1)
 Load_GBB()
-GameBoy()
 
 fnRefreshMenu := Func("RefreshMenu")
 SetTimer, %fnRefreshMenu%, 30000
@@ -109,6 +113,9 @@ OnMessage(0x200, "WM_MOUSEMOVE")
 GetWebData("Twitch", "https://www.twitch.tv/yvraldis")
 GetWebData("Twitter", "https://rss.app/feeds/RlRJtcDm23osS3Dp.xml")
 GetWebData("Instagram", "https://rss.app/feeds/TFWPloYEDai0dx6r.xml")
+
+Gui, Splash: destroy
+Global Loaded := 1
 Return
 
 ClearOldTimesFromWinArray(age) {
@@ -256,11 +263,12 @@ Fill_Edit(box, k, s) {
     GuiControl, menu:, %box%, %t%
 }
 
-GameBoy() {
+GameBoy(b="") {
     Critical
 	Static a
     fnWatchDPad := Func("WatchDPad")
 	GameBoyMode := ReadIni("GamBoyMode", "Settings", 0)
+	(!GameBoyMode && b) ? a := 1
 	If (GameBoyMode && !a) {
 		SetTimer, %fnWatchDPad%, 150
 		Hotkey, Joy1 , On
@@ -338,7 +346,7 @@ GetWebData(platform, url) {
 			Page.WaitForResponse()
 			Page := Page.ResponseText
 
-		    beforeString1 = <meta name=`"description`" content=`"
+		    beforeString1 = description`" content=`"
 			afterString1 = `"/><
 			SearchStr := "s)\Q" . beforeString1 . "\E(.*?)\Q" . afterString1 . "\E"
 
@@ -426,10 +434,10 @@ Load_CFG_Radios() {
 Load_GBB() {
     Loop, 9
     	GBBai[A_Index] := ReadIni(GBBa[A_Index], "GameBoy")
+	GameBoy(1)
 }
 
 LogEvent(txt, file) {
-	LogModul := 1
 	If LogModul {
         FormatTime, timestamp, , [yyyyMMddHHmmss]
 		txt := timestamp . " " . txt . "`n"
@@ -631,6 +639,14 @@ selectRNDtheme() {
 	}
 }
 
+SplashScreen() {
+  	Gui, Splash: Color, 1a2b3c
+	Gui, Splash: +HwndSplashwdHwnd +LastFound +AlwaysOnTop -Caption +ToolWindow
+	Gui, Splash: Add, Picture, x0 y0, %PathToSplashImage%
+	Gui, Splash: Show, w%SplashPIC_widget_w% h%SplashPIC_widget_h% NA, Power Reminder Splash Screen
+	WinSet, TransColor, 1a2b3c, ahk_id %SplashwdHwnd%
+}
+
 TrimRadiobox(Radiobox) {
 	GuiControlGet, r, menu: Pos, %Radiobox%
 	GuiControl, menu: Move, %Radiobox%, w%rH%
@@ -706,6 +722,14 @@ menuButtonSave:
 	GuiControl, menu:, Edit2_2, %Edit2_2%
 	Slider2_1_TT := Edit2_1
 	Slider2_2_TT := Edit2_2
+
+	s := "GameBoy"
+	Loop, 9 {
+        b = Edit4_%A_index%
+		b := %b%
+		SaveIni(GBBa[A_Index], b, s)
+		GBBai[A_Index] := b
+	}
 	GoTo, WriteSelection
 Return
 
@@ -722,6 +746,9 @@ GameBoyButton:
 return
 
 Menu:
+	If (!Loaded)
+		GoTo, menuGuiClose
+
 	Global ThemeDropDownList := DDLbuilder(ReadThemes())
 	Global MemeDropDownList := DDLbuilder(ReadMemes())
     If (MenuHwnd) {
@@ -1068,14 +1095,6 @@ WriteSelection:
 	SaveIni("Idle", Radio2_5, "Settings")
 	SaveIni("MemePopUps", Radio2_7, "Settings")
 	SaveIni("GamBoyMode", Radio2_9, "Settings")
-
-	s := "GameBoy"
-	Loop, 9 {
-        b = Edit4_%A_index%
-		b := %b%
-		SaveIni(GBBa[A_Index], b, s)
-		GBBai[A_Index] := b
-	}
 
 	Popup_time := Edit2_2
 
