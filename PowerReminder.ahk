@@ -50,6 +50,8 @@ Global SplashPIC_widget_w := 600
 Global PathToSplashImage := TF . "splash.png"
 Global TwitchTitle := "Twitch: Disconnected"
 Global TwitchLink
+Global YouTubeTitle := "YouTube: Disconnected"
+Global YouTubeLink
 Global TwitterTitle := "Twitter: Disconnected"
 Global TwitterLink
 Global InstagramTitle := "Instagram: Disconnected"
@@ -70,9 +72,11 @@ Menu, Tray, Icon, %ICO%
 
 Menu, Tray, Tip, %AppTooltip%
 Menu, Tray, Add, %TwitchTitle%, OpenTwitchStream
+Menu, Tray, Add, %YouTubeTitle%, OpenYouTubeLink
 Menu, Tray, Add, %InstagramTitle%, OpenInstagramLink
 Menu, Tray, Add, %TwitterTitle%, OpenTwitterLink
 Menu, webportals, Add, Twitch, OpenTwitchStream
+Menu, webportals, Add, YouTube, OpenYouTubeLink
 Menu, webportals, Add, Instagram, OpenInstagram
 Menu, webportals, Add, Twitter, OpenTwitter
 Menu, Tray, Add, Web portals, :webportals
@@ -111,6 +115,7 @@ OnError("errRe")
 OnMessage(0x200, "WM_MOUSEMOVE")
 
 GetWebData("Twitch", "https://www.twitch.tv/yvraldis")
+GetWebData("YouTube", "https://rss.app/feeds/lUebcex3LEssYKpk.xml")
 GetWebData("Twitter", "https://rss.app/feeds/RlRJtcDm23osS3Dp.xml")
 GetWebData("Instagram", "https://rss.app/feeds/TFWPloYEDai0dx6r.xml")
 
@@ -1055,6 +1060,10 @@ Return
 
 OpenInstagramLink:
 	Run %InstagramLink%
+Return
+
+OpenYouTubeLink:
+	Run %YouTubeLink%
 Return
 
 Reload:
